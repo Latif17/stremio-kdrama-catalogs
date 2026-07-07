@@ -46,7 +46,7 @@ describe('Cinemeta ID Mapper', () => {
     it('returns null on network failure', async () => {
         nock('https://v3-cinemeta.strem.io')
             .get('/catalog/series/top/search=Error%20Show.json')
-            .replyWithError('Network error');
+            .reply(500, 'Internal Server Error');
             
         const id = await mapTitleToImdbId('Error Show', 'series', 2020);
         expect(id).toBe(null);

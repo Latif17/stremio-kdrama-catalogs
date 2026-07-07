@@ -6,12 +6,8 @@ const { mapTitleToImdbId } = require('./cinemeta');
 const KURYANA_BASE = 'https://kuryana.vercel.app/api/v1';
 
 async function fetchFromMDL(endpoint) {
-    try {
-        const response = await axios.get(`${KURYANA_BASE}${endpoint}`, { timeout: 10000 });
-        return response.data;
-    } catch(e) {
-        return [];
-    }
+    const response = await axios.get(`${KURYANA_BASE}${endpoint}`, { timeout: 10000 });
+    return response.data;
 }
 
 async function fetchCatalog(catalogId) {
@@ -22,26 +18,30 @@ async function fetchCatalog(catalogId) {
             data = await fetchFromMDL('/shows/top');
         } else if (catalogId === 'kdrama_trending') {
             data = await fetchFromMDL('/shows/popular');
+        } else {
+            throw new Error(`Unknown catalog ID: ${catalogId}`);
         }
         
         const items = Array.isArray(data) ? data : (data.results || data.data || []);
         
-        const metas = [];
-        for (const item of items) {
+        const metaPromises = items.map(async (item) => {
             const title = item.title || item.name;
             const year = item.year || (item.release_date && item.release_date.substring(0,4));
-            if (!title) continue;
+            if (!title) return null;
             
             const imdbId = await mapTitleToImdbId(title, 'series', year);
             if (imdbId) {
-                metas.push({
+                return {
                     id: imdbId,
                     type: 'series',
                     name: title,
                     poster: item.poster || item.thumb || item.image || ''
-                });
+                };
             }
-        }
+            return null;
+        });
+        
+        const metas = (await Promise.all(metaPromises)).filter(Boolean);
         return metas;
     });
 }
