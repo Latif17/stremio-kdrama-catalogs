@@ -1,5 +1,6 @@
 // src/server.js
 const { addonBuilder, serveHTTP } = require('stremio-addon-sdk');
+const { fetchCatalog } = require('./mdl');
 
 const manifest = {
     id: 'org.kdramacatalog',
@@ -17,7 +18,8 @@ const manifest = {
 const builder = new addonBuilder(manifest);
 
 builder.defineCatalogHandler(async ({ type, id }) => {
-    return { metas: [] };
+    const metas = await fetchCatalog(id);
+    return { metas };
 });
 
 function getInterface() {
