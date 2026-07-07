@@ -24,24 +24,22 @@ async function fetchCatalog(catalogId) {
         
         const items = Array.isArray(data) ? data : (data.results || data.data || []);
         
-        const metaPromises = items.map(async (item) => {
+        const metas = [];
+        for (const item of items) {
             const title = item.title || item.name;
             const year = item.year || (item.release_date && item.release_date.substring(0,4));
-            if (!title) return null;
+            if (!title) continue;
             
             const imdbId = await mapTitleToImdbId(title, 'series', year);
             if (imdbId) {
-                return {
+                metas.push({
                     id: imdbId,
                     type: 'series',
                     name: title,
                     poster: item.poster || item.thumb || item.image || ''
-                };
+                });
             }
-            return null;
-        });
-        
-        const metas = (await Promise.all(metaPromises)).filter(Boolean);
+        }
         return metas;
     });
 }
