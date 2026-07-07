@@ -1,38 +1,16 @@
-// src/server.js
-const { addonBuilder, serveHTTP } = require('stremio-addon-sdk');
-const { fetchCatalog } = require('./mdl');
+const express = require('express');
+const app = express();
 
-const manifest = {
-    id: 'org.kdramacatalog',
-    version: '1.0.0',
-    name: 'K-Drama Catalogs',
-    description: 'Trending and Top Rated K-Dramas from MyDramaList',
-    types: ['series', 'movie'],
-    catalogs: [
-        { type: 'series', id: 'kdrama_trending', name: 'Trending K-Dramas' },
-        { type: 'series', id: 'kdrama_top', name: 'Top K-Dramas' }
-    ],
-    resources: ['catalog']
-};
-
-const builder = new addonBuilder(manifest);
-
-builder.defineCatalogHandler(async ({ type, id }) => {
-    try {
-        const metas = await fetchCatalog(id);
-        return { metas };
-    } catch (error) {
-        console.error(`Catalog handler error for ${type}/${id}:`, error);
-        return { metas: [] };
-    }
+app.use((req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Headers', '*');
+    next();
 });
 
-function getInterface() {
-    return builder.getInterface();
-}
-
-module.exports = { builder, getInterface };
+module.exports = app;
 
 if (require.main === module) {
-    serveHTTP(builder.getInterface(), { port: process.env.PORT || 7000 });
+    app.listen(process.env.PORT || 7000, () => {
+        console.log('Listening on port ' + (process.env.PORT || 7000));
+    });
 }
