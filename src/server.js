@@ -18,8 +18,13 @@ const manifest = {
 const builder = new addonBuilder(manifest);
 
 builder.defineCatalogHandler(async ({ type, id }) => {
-    const metas = await fetchCatalog(id);
-    return { metas };
+    try {
+        const metas = await fetchCatalog(id);
+        return { metas };
+    } catch (error) {
+        console.error(`Catalog handler error for ${type}/${id}:`, error);
+        return { metas: [] };
+    }
 });
 
 function getInterface() {
