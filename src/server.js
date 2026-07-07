@@ -1,5 +1,6 @@
 const express = require('express');
 const path = require('path');
+const { fetchCatalog } = require('./mdl');
 const app = express();
 
 app.use((req, res, next) => {
@@ -53,6 +54,20 @@ app.get('/:catalogChoices/manifest.json', (req, res) => {
     dynamicManifest.catalogs = catalogsDef.filter(cat => choices[cat.id] === "on");
     
     res.json(dynamicManifest);
+});
+
+app.get([
+    '/:catalogChoices/catalog/:type/:id.json',
+    '/:catalogChoices/catalog/:type/:id/:extra.json'
+], async (req, res) => {
+    const { type, id } = req.params;
+    try {
+        const metas = await fetchCatalog(id);
+        res.json({ metas });
+    } catch (error) {
+        console.error(`Catalog fetch error for ${type}/${id}:`, error);
+        res.status(500).json({ err: 'Internal Server Error', metas: [] });
+    }
 });
 
 module.exports = app;
