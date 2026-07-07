@@ -1,7 +1,7 @@
 const { LRUCache } = require('lru-cache');
 
 const cache = new LRUCache({
-    max: 500,
+    max: 5000,
     ttl: 1000 * 60 * 60, // 1 hour default
 });
 

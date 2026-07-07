@@ -25,19 +25,28 @@ async function fetchCatalog(catalogId) {
         const items = Array.isArray(data) ? data : (data.results || data.data || []);
         
         const metas = [];
-        for (const item of items) {
-            const title = item.title || item.name;
-            const year = item.year || (item.release_date && item.release_date.substring(0,4));
-            if (!title) continue;
-            
-            const imdbId = await mapTitleToImdbId(title, 'series', year);
-            if (imdbId) {
-                metas.push({
-                    id: imdbId,
-                    type: 'series',
-                    name: title,
-                    poster: item.poster || item.thumb || item.image || ''
-                });
+        const concurrencyLimit = 5;
+        for (let i = 0; i < items.length; i += concurrencyLimit) {
+            const chunk = items.slice(i, i + concurrencyLimit);
+            const chunkPromises = chunk.map(async (item) => {
+                const title = item.title || item.name;
+                const year = item.year || (item.release_date && item.release_date.substring(0,4));
+                if (!title) return null;
+                
+                const imdbId = await mapTitleToImdbId(title, 'series', year);
+                if (imdbId) {
+                    return {
+                        id: imdbId,
+                        type: 'series',
+                        name: title,
+                        poster: item.poster || item.thumb || item.image || ''
+                    };
+                }
+                return null;
+            });
+            const results = await Promise.all(chunkPromises);
+            for (const res of results) {
+                if (res) metas.push(res);
             }
         }
         return metas;
