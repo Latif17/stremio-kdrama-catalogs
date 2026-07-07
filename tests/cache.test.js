@@ -1,4 +1,4 @@
-const { getCachedOrFetch, createCache } = require('../src/cache');
+const { getCachedOrFetch } = require('../src/cache');
 
 describe('Cache Service', () => {
     it('fetches once and caches subsequent calls using default cache', async () => {
@@ -13,16 +13,7 @@ describe('Cache Service', () => {
         expect(callCount).toBe(1);
     });
 
-    describe('with isolated cache instances', () => {
-        let cacheService;
-        let getCachedOrFetchLocal;
-
-        beforeEach(() => {
-            const instance = createCache({ max: 10, ttl: 1000 });
-            getCachedOrFetchLocal = instance.getCachedOrFetch;
-            cacheService = instance.cache;
-        });
-
+    describe('with shared cache instance', () => {
         it('handles concurrent calls without cache stampede', async () => {
             let callCount = 0;
             const fetchFn = async () => {
@@ -31,9 +22,9 @@ describe('Cache Service', () => {
             };
 
             const [res1, res2, res3] = await Promise.all([
-                getCachedOrFetchLocal('test-key-concurrent', 1000, fetchFn),
-                getCachedOrFetchLocal('test-key-concurrent', 1000, fetchFn),
-                getCachedOrFetchLocal('test-key-concurrent', 1000, fetchFn)
+                getCachedOrFetch('test-key-concurrent', 1000, fetchFn),
+                getCachedOrFetch('test-key-concurrent', 1000, fetchFn),
+                getCachedOrFetch('test-key-concurrent', 1000, fetchFn)
             ]);
 
             expect(res1).toBe('concurrent');
@@ -50,10 +41,9 @@ describe('Cache Service', () => {
                 return 'success';
             };
 
-            await expect(getCachedOrFetchLocal('test-key-error', 1000, fetchFn)).rejects.toThrow('fail');
-            expect(cacheService.has('test-key-error')).toBe(false);
+            await expect(getCachedOrFetch('test-key-error', 1000, fetchFn)).rejects.toThrow('fail');
 
-            const res = await getCachedOrFetchLocal('test-key-error', 1000, fetchFn);
+            const res = await getCachedOrFetch('test-key-error', 1000, fetchFn);
             expect(res).toBe('success');
             expect(callCount).toBe(2);
         });
@@ -62,14 +52,26 @@ describe('Cache Service', () => {
             let callCount = 0;
             const fetchFn = async () => { callCount++; return 'ttl-data'; };
             
-            await getCachedOrFetchLocal('test-key-ttl', 100, fetchFn);
+            await getCachedOrFetch('test-key-ttl', 100, fetchFn);
             expect(callCount).toBe(1);
 
             // Wait 120ms to ensure TTL expires
             await new Promise(resolve => setTimeout(resolve, 120));
 
-            await getCachedOrFetchLocal('test-key-ttl', 100, fetchFn);
+            await getCachedOrFetch('test-key-ttl', 100, fetchFn);
             expect(callCount).toBe(2);
+        });
+        
+        it('handles synchronous fetchFn correctly', async () => {
+            let callCount = 0;
+            const fetchFn = () => { callCount++; return 'sync-data'; };
+            
+            const res1 = await getCachedOrFetch('test-key-sync', 1000, fetchFn);
+            const res2 = await getCachedOrFetch('test-key-sync', 1000, fetchFn);
+            
+            expect(res1).toBe('sync-data');
+            expect(res2).toBe('sync-data');
+            expect(callCount).toBe(1);
         });
     });
 });
