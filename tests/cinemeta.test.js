@@ -27,4 +27,12 @@ describe('Cinemeta ID Mapper', () => {
         const id = await mapTitleToImdbId('Fake Show', 'series', 2020);
         expect(id).toBe(null);
     });
+
+    it('throws on network failure', async () => {
+        nock('https://v3-cinemeta.strem.io')
+            .get('/catalog/series/top/search=Error%20Show.json')
+            .replyWithError('Network error');
+            
+        await expect(mapTitleToImdbId('Error Show', 'series', 2020)).rejects.toThrow();
+    });
 });
