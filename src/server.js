@@ -15,8 +15,12 @@ app.get('/', (req, res) => {
 
 app.use(express.static(path.join(__dirname, 'public')));
 
+const fs = require('fs');
+
 app.get('/configure', (req, res) => {
-    res.sendFile(path.join(__dirname, 'configure.html'));
+    let html = fs.readFileSync(path.join(__dirname, 'configure.html'), 'utf8');
+    html = html.replace('{{VERSION}}', version);
+    res.send(html);
 });
 
 const catalogsDef = [
@@ -29,9 +33,11 @@ const catalogsDef = [
     { type: 'k drama', id: 'kdrama_top_movie', name: 'Top K-Movies', extra: [{ name: 'genre', isRequired: false, options: ['Action', 'Adventure', 'Comedy', 'Crime', 'Drama', 'Fantasy', 'Historical', 'Horror', 'Mystery', 'Romance', 'Sci-fi', 'Thriller'] }, { name: 'skip' }] },
 ];
 
+const { version } = require('../package.json');
+
 const baseManifest = {
     id: 'org.kdramacatalog',
-    version: '1.0.5',
+    version: version,
     name: 'K-Drama Catalogs',
     description: 'Trending and Top Rated K-Dramas & K-Movies',
     types: ['k drama', 'series', 'movie'],
