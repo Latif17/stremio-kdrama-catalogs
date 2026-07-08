@@ -13,6 +13,8 @@ app.get('/', (req, res) => {
     res.redirect('/configure');
 });
 
+app.use(express.static(path.join(__dirname, 'public')));
+
 app.get('/configure', (req, res) => {
     res.sendFile(path.join(__dirname, 'configure.html'));
 });
@@ -20,9 +22,9 @@ app.get('/configure', (req, res) => {
 const catalogsDef = [
     { type: 'k drama', id: 'kdrama_trending_series', name: 'Trending K-Dramas', extra: [{ name: 'genre', isRequired: false, options: ['Action', 'Adventure', 'Comedy', 'Crime', 'Drama', 'Fantasy', 'Historical', 'Horror', 'Mystery', 'Romance', 'Sci-fi', 'Thriller'] }, { name: 'skip' }] },
     { type: 'k drama', id: 'kdrama_top_series', name: 'Top K-Dramas', extra: [{ name: 'genre', isRequired: false, options: ['Action', 'Adventure', 'Comedy', 'Crime', 'Drama', 'Fantasy', 'Historical', 'Horror', 'Mystery', 'Romance', 'Sci-fi', 'Thriller'] }, { name: 'skip' }] },
+    { type: 'k drama', id: 'kdrama_airing_series', name: 'Top Airing K-Dramas', extra: [{ name: 'genre', isRequired: false, options: ['Action', 'Adventure', 'Comedy', 'Crime', 'Drama', 'Fantasy', 'Historical', 'Horror', 'Mystery', 'Romance', 'Sci-fi', 'Thriller'] }, { name: 'skip' }] },
     { type: 'k drama', id: 'kdrama_trending_movie', name: 'Trending K-Movies', extra: [{ name: 'genre', isRequired: false, options: ['Action', 'Adventure', 'Comedy', 'Crime', 'Drama', 'Fantasy', 'Historical', 'Horror', 'Mystery', 'Romance', 'Sci-fi', 'Thriller'] }, { name: 'skip' }] },
     { type: 'k drama', id: 'kdrama_top_movie', name: 'Top K-Movies', extra: [{ name: 'genre', isRequired: false, options: ['Action', 'Adventure', 'Comedy', 'Crime', 'Drama', 'Fantasy', 'Historical', 'Horror', 'Mystery', 'Romance', 'Sci-fi', 'Thriller'] }, { name: 'skip' }] },
-    { type: 'k drama', id: 'kdrama_airing_series', name: 'Top Airing K-Dramas', extra: [{ name: 'genre', isRequired: false, options: ['Action', 'Adventure', 'Comedy', 'Crime', 'Drama', 'Fantasy', 'Historical', 'Horror', 'Mystery', 'Romance', 'Sci-fi', 'Thriller'] }, { name: 'skip' }] }
 ];
 
 const baseManifest = {
@@ -41,7 +43,9 @@ const baseManifest = {
 };
 
 app.get('/manifest.json', (req, res) => {
-    res.json(baseManifest);
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+    const manifest = { ...baseManifest, logo: `${protocol}://${req.get('host')}/logo.jpeg` };
+    res.json(manifest);
 });
 
 app.get('/:catalogChoices/manifest.json', (req, res) => {
@@ -55,6 +59,9 @@ app.get('/:catalogChoices/manifest.json', (req, res) => {
 
     const dynamicManifest = JSON.parse(JSON.stringify(baseManifest));
     delete dynamicManifest.behaviorHints;
+    
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+    dynamicManifest.logo = `${protocol}://${req.get('host')}/logo.jpeg`;
     
     // Support legacy "kdrama_trending" or "kdrama_top" as well as split ones
     dynamicManifest.catalogs = catalogsDef.filter(cat => {
