@@ -29,7 +29,7 @@ const baseManifest = {
     version: '1.0.0',
     name: 'K-Drama Catalogs',
     description: 'Trending and Top Rated K-Dramas & K-Movies',
-    types: ['series', 'movie'],
+    types: ['k drama'],
     resources: ['catalog'],
     catalogs: [],
     behaviorHints: {
