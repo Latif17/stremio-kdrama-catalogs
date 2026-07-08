@@ -34,13 +34,7 @@
         
         <form id="configForm">
             <h3>Addon Settings</h3>
-            <div class="form-element">
-                <input type="checkbox" id="ratings" name="ratings">
-                <label for="ratings">Ratings on Posters</label>
-            </div>
-            
-            <div class="separator"></div>
-            
+
             <h3>Choose Catalogs</h3>
             <div class="form-element">
                 <input type="checkbox" id="kdrama_trending_series" name="kdrama_trending_series" checked>
@@ -78,7 +72,6 @@
 
     <script>
         const configForm = document.getElementById('configForm');
-        const ratingsCheckbox = document.getElementById('ratings');
         const installBtn = document.getElementById('installBtn');
         const copyBtn = document.getElementById('copyBtn');
 
@@ -86,12 +79,7 @@
             const formData = new FormData(configForm);
             const config = {};
             for (let [key, value] of formData.entries()) {
-                if (key !== 'ratings') {
-                    config[key] = value;
-                }
-            }
-            if (ratingsCheckbox.checked) {
-                config.rpdbkey = 't0-free-rpdb';
+                config[key] = value;
             }
             return config;
         }
