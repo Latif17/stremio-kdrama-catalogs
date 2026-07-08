@@ -74,6 +74,36 @@
         const installBtn = document.getElementById('installBtn');
         const copyBtn = document.getElementById('copyBtn');
 
+        let validatedApiKey = null;
+        let isKeyValid = false;
+        let validationPromise = null;
+        let pendingValidationKey = null;
+
+        async function validateKey(apiKey) {
+            if (apiKey === validatedApiKey) return isKeyValid;
+            if (apiKey === pendingValidationKey && validationPromise) {
+                return await validationPromise;
+            }
+            
+            pendingValidationKey = apiKey;
+            validationPromise = fetch('https://api.ratingposterdb.com/' + apiKey + '/isValid')
+                .then(resp => resp.json())
+                .then(data => {
+                    validatedApiKey = apiKey;
+                    isKeyValid = !!data.valid;
+                    pendingValidationKey = null;
+                    validationPromise = null;
+                    return isKeyValid;
+                })
+                .catch(() => {
+                    pendingValidationKey = null;
+                    validationPromise = null;
+                    return false;
+                });
+                
+            return await validationPromise;
+        }
+
         ratingsCheckbox.addEventListener('change', (event) => {
             if (event.currentTarget.checked) {
                 rpdbData.innerHTML = `
@@ -82,18 +112,14 @@
                     <input type="text" id="rpdbkey" name="rpdbkey" required placeholder="Enter your API Key"/>
                 </div>`;
                 const rpdbInput = document.getElementById('rpdbkey');
-                rpdbInput.addEventListener('blur', () => {
+                rpdbInput.addEventListener('blur', async () => {
                     const apiKey = rpdbInput.value;
                     if (!apiKey) return;
-                    fetch('https://api.ratingposterdb.com/' + apiKey + '/isValid')
-                        .then(async (resp) => {
-                            let data = await resp.json().catch(() => ({}));
-                            if (!data.valid) {
-                                alert('RPDB Key is invalid, please try again');
-                                rpdbInput.value = '';
-                            }
-                        })
-                        .catch(() => alert('Could not validate RPDB key'));
+                    const isValid = await validateKey(apiKey);
+                    if (!isValid && rpdbInput.value === apiKey) {
+                        rpdbInput.value = '';
+                        setTimeout(() => alert('RPDB Key is invalid, please try again'), 10);
+                    }
                 });
             } else {
                 rpdbData.innerHTML = '';
@@ -119,21 +145,55 @@
             return protocol + '//' + host + '/' + configStr + '/manifest.json';
         }
 
-        installBtn.onclick = () => {
-            if (configForm.reportValidity()) {
-                window.location.href = getInstallLink(true);
+        installBtn.onclick = async () => {
+            if (!configForm.reportValidity()) return;
+            if (ratingsCheckbox.checked) {
+                const rpdbInput = document.getElementById('rpdbkey');
+                const apiKey = rpdbInput ? rpdbInput.value : null;
+                if (apiKey) {
+                    installBtn.disabled = true;
+                    installBtn.textContent = 'VALIDATING...';
+                    const isValid = await validateKey(apiKey);
+                    installBtn.disabled = false;
+                    installBtn.textContent = 'INSTALL';
+                    if (!isValid) {
+                        if (rpdbInput.value === apiKey) {
+                            rpdbInput.value = '';
+                            setTimeout(() => alert('RPDB Key is invalid, please try again'), 10);
+                        }
+                        return;
+                    }
+                }
             }
+            window.location.href = getInstallLink(true);
         };
 
-        copyBtn.onclick = () => {
-            if (configForm.reportValidity()) {
-                const link = getInstallLink(false);
-                navigator.clipboard.writeText(link).then(() => {
-                    alert('Link copied to clipboard!');
-                }).catch(() => {
-                    alert('Failed to copy. URL: ' + link);
-                });
+        copyBtn.onclick = async () => {
+            if (!configForm.reportValidity()) return;
+            if (ratingsCheckbox.checked) {
+                const rpdbInput = document.getElementById('rpdbkey');
+                const apiKey = rpdbInput ? rpdbInput.value : null;
+                if (apiKey) {
+                    copyBtn.disabled = true;
+                    copyBtn.textContent = 'VALIDATING...';
+                    const isValid = await validateKey(apiKey);
+                    copyBtn.disabled = false;
+                    copyBtn.textContent = 'COPY LINK';
+                    if (!isValid) {
+                        if (rpdbInput.value === apiKey) {
+                            rpdbInput.value = '';
+                            setTimeout(() => alert('RPDB Key is invalid, please try again'), 10);
+                        }
+                        return;
+                    }
+                }
             }
+            const link = getInstallLink(false);
+            navigator.clipboard.writeText(link).then(() => {
+                alert('Link copied to clipboard!');
+            }).catch(() => {
+                alert('Failed to copy. URL: ' + link);
+            });
         };
     </script>
 </body>
