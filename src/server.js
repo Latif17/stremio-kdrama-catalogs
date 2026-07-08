@@ -32,6 +32,7 @@ const baseManifest = {
     description: 'Trending and Top Rated K-Dramas & K-Movies',
     types: ['k drama', 'series', 'movie'],
     resources: ['catalog', 'meta'],
+    idPrefixes: ['tt'],
     catalogs: [],
     behaviorHints: {
         configurable: true,
@@ -113,13 +114,32 @@ app.get([
 app.get([
     '/meta/:type/:id.json',
     '/:catalogChoices/meta/:type/:id.json'
-], (req, res) => {
-    let { type, id } = req.params;
+], async (req, res) => {
+    let { type, id, catalogChoices } = req.params;
     
     // Cinemeta doesn't understand "k drama" type. 
     // We map "k drama" to "series" for cinemeta requests by default.
     if (type === 'k drama') {
         type = 'series';
+    }
+
+    let choices = {};
+    try {
+        if (catalogChoices) choices = JSON.parse(catalogChoices);
+    } catch(e) {}
+
+    if (typeof choices.rpdbkey === 'string' && choices.rpdbkey.trim() !== '' && id.startsWith('tt')) {
+        try {
+            const axios = require('axios');
+            const metaRes = await axios.get(`https://v3-cinemeta.strem.io/meta/${type}/${id}.json`);
+            if (metaRes.data && metaRes.data.meta) {
+                metaRes.data.meta.poster = `https://api.ratingposterdb.com/${choices.rpdbkey}/imdb/poster-default/${id}.jpg?fallback=true`;
+            }
+            res.setHeader('Cache-Control', 'public, max-age=14400, stale-while-revalidate=86400, stale-if-error=86400');
+            return res.json(metaRes.data);
+        } catch (e) {
+            console.error('Error fetching meta from cinemeta:', e.message);
+        }
     }
     
     res.redirect(307, `https://v3-cinemeta.strem.io/meta/${type}/${id}.json`);
