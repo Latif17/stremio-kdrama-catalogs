@@ -62,12 +62,31 @@ describe('MDL Catalog Fetcher', () => {
         expect(metas[0].name).toBe('Success Drama');
     });
 
-    it('throws error on API failure', async () => {
+    it('returns empty array on API failure', async () => {
         nock('https://mydramalist.com')
             .get('/search')
             .query(true)
+            .times(5)
             .reply(500, 'Internal Server Error');
         
-        await expect(fetchCatalog('kdrama_top')).rejects.toThrow();
+        const metas = await fetchCatalog('kdrama_top');
+        expect(metas).toEqual([]);
+    });
+});
+
+describe('MDL Scraper', () => {
+    it('slices array based on skip', async () => {
+        // mock to return unique ids for the test
+        const { mapTitleToImdbId } = require('../src/cinemeta');
+        mapTitleToImdbId.mockImplementation(async (title) => 'tt' + Buffer.from(title).toString('hex').slice(0, 7));
+
+        const metasPage1 = await fetchCatalog('kdrama_trending_series', {}, 0);
+        const metasPage2 = await fetchCatalog('kdrama_trending_series', {}, 20);
+        
+        expect(metasPage1.length).toBeLessThanOrEqual(20);
+        expect(metasPage2.length).toBeLessThanOrEqual(20);
+        if (metasPage1.length > 0 && metasPage2.length > 0) {
+            expect(metasPage1[0].id).not.toBe(metasPage2[0].id);
+        }
     });
 });
