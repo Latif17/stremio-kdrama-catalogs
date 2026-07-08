@@ -21,7 +21,8 @@ const catalogsDef = [
     { type: 'k drama', id: 'kdrama_trending_series', name: 'Trending K-Dramas', extra: [{ name: 'genre', isRequired: false, options: ['Action', 'Adventure', 'Comedy', 'Crime', 'Drama', 'Fantasy', 'Historical', 'Horror', 'Mystery', 'Romance', 'Sci-fi', 'Thriller'] }] },
     { type: 'k drama', id: 'kdrama_top_series', name: 'Top K-Dramas', extra: [{ name: 'genre', isRequired: false, options: ['Action', 'Adventure', 'Comedy', 'Crime', 'Drama', 'Fantasy', 'Historical', 'Horror', 'Mystery', 'Romance', 'Sci-fi', 'Thriller'] }] },
     { type: 'k drama', id: 'kdrama_trending_movie', name: 'Trending K-Movies', extra: [{ name: 'genre', isRequired: false, options: ['Action', 'Adventure', 'Comedy', 'Crime', 'Drama', 'Fantasy', 'Historical', 'Horror', 'Mystery', 'Romance', 'Sci-fi', 'Thriller'] }] },
-    { type: 'k drama', id: 'kdrama_top_movie', name: 'Top K-Movies', extra: [{ name: 'genre', isRequired: false, options: ['Action', 'Adventure', 'Comedy', 'Crime', 'Drama', 'Fantasy', 'Historical', 'Horror', 'Mystery', 'Romance', 'Sci-fi', 'Thriller'] }] }
+    { type: 'k drama', id: 'kdrama_top_movie', name: 'Top K-Movies', extra: [{ name: 'genre', isRequired: false, options: ['Action', 'Adventure', 'Comedy', 'Crime', 'Drama', 'Fantasy', 'Historical', 'Horror', 'Mystery', 'Romance', 'Sci-fi', 'Thriller'] }] },
+    { type: 'k drama', id: 'kdrama_airing_series', name: 'Top Airing K-Dramas', extra: [{ name: 'genre', isRequired: false, options: ['Action', 'Adventure', 'Comedy', 'Crime', 'Drama', 'Fantasy', 'Historical', 'Horror', 'Mystery', 'Romance', 'Sci-fi', 'Thriller'] }] }
 ];
 
 const baseManifest = {
@@ -78,11 +79,17 @@ app.get([
     }
 
     let extraObj = {};
-    if (extra && extra.startsWith('genre=')) {
-        extraObj.genre = decodeURIComponent(extra.split('=')[1]).replace('.json', '');
+    let skip = 0;
+    if (extra) {
+        const extraString = decodeURIComponent(extra.replace('.json', ''));
+        const parts = extraString.split('&');
+        for (const part of parts) {
+            if (part.startsWith('genre=')) extraObj.genre = part.split('=')[1];
+            if (part.startsWith('skip=')) skip = parseInt(part.split('=')[1]);
+        }
     }
     try {
-        let metas = await fetchCatalog(id, extraObj);
+        let metas = await fetchCatalog(id, extraObj, skip);
 
         // Inject RPDB poster if key is present and the item has an IMDb ID (starts with 'tt')
         if (typeof choices.rpdbkey === 'string' && choices.rpdbkey.trim() !== '') {
