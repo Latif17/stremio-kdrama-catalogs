@@ -5,66 +5,136 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KDrama Catalog Configuration</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #121212; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .container { background: #1e1e1e; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); width: 100%; max-width: 400px; }
-        h1 { margin-top: 0; font-size: 1.5rem; text-align: center; }
-        .option { margin-bottom: 1rem; display: flex; align-items: center; }
-        .option input { margin-right: 10px; }
-        button { width: 100%; padding: 10px; background: #8a5a99; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem; margin-top: 1rem; }
+        * { box-sizing: border-box; }
+        body, html { margin: 0; padding: 0; width: 100%; min-height: 100%; }
+        body { background: #121212; padding: 2vh; font-family: 'Open Sans', Arial, sans-serif; color: white; display: flex; justify-content: center; align-items: flex-start; }
+        h1 { font-size: 3.5vh; font-weight: 700; margin: 0; }
+        h2 { font-size: 2vh; font-weight: normal; font-style: italic; opacity: 0.8; margin: 0 0 2vh 0; }
+        h3 { font-size: 2.2vh; border-bottom: 1px solid #333; padding-bottom: 1vh; margin-bottom: 2vh; }
+        .container { background: #1e1e1e; padding: 4vh; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); width: 100%; max-width: 60vh; margin-top: 5vh; }
+        .logo { height: 12vh; text-align: center; margin-bottom: 2vh; }
+        .logo img { height: 100%; object-fit: contain; }
+        .form-element { margin-bottom: 2vh; display: flex; align-items: center; }
+        .form-element label { margin-left: 1vh; cursor: pointer; }
+        .form-element.column { flex-direction: column; align-items: flex-start; }
+        .form-element.column input[type="text"] { width: 100%; padding: 1vh; margin-top: 1vh; background: #333; border: 1px solid #555; color: white; border-radius: 4px; }
+        .separator { margin-bottom: 3vh; }
+        button { border: 0; color: white; background: #8A5AAB; padding: 1.5vh; width: 100%; text-align: center; font-size: 2.2vh; font-weight: 600; cursor: pointer; border-radius: 4px; transition: background 0.2s; margin-top: 1vh; }
         button:hover { background: #714a7e; }
+        button.secondary { background: #4a4a4a; margin-top: 2vh; }
+        button.secondary:hover { background: #333; }
+        a { text-decoration: none; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Configure Addon</h1>
+        <div class="logo">
+            <img src="https://m.media-amazon.com/images/G/01/imdb/images/social/imdb_logo._CB410901634_.png" alt="Logo">
+        </div>
+        <h1 style="text-align: center;">KDrama Catalogs</h1>
+        <h2 style="text-align: center;">v1.0.0</h2>
+        
         <form id="configForm">
-            <div class="option">
+            <h3>Addon Settings</h3>
+            <div class="form-element">
+                <input type="checkbox" id="ratings" name="ratings">
+                <label for="ratings">Ratings on Posters (requires RPDB key)</label>
+            </div>
+            <div id="rpdb-data"></div>
+            
+            <div class="separator"></div>
+            
+            <h3>Choose Catalogs</h3>
+            <div class="form-element">
                 <input type="checkbox" id="kdrama_trending_series" name="kdrama_trending_series" checked>
                 <label for="kdrama_trending_series">Trending K-Dramas (Series)</label>
             </div>
-            <div class="option">
+            <div class="form-element">
                 <input type="checkbox" id="kdrama_trending_movie" name="kdrama_trending_movie" checked>
                 <label for="kdrama_trending_movie">Trending K-Movies (Movies)</label>
             </div>
-            <div class="option">
+            <div class="form-element">
                 <input type="checkbox" id="kdrama_top_series" name="kdrama_top_series" checked>
                 <label for="kdrama_top_series">Top K-Dramas (Series)</label>
             </div>
-            <div class="option">
+            <div class="form-element">
                 <input type="checkbox" id="kdrama_top_movie" name="kdrama_top_movie" checked>
                 <label for="kdrama_top_movie">Top K-Movies (Movies)</label>
             </div>
-            <button type="button" onclick="generateInstallLink()">Install Addon</button>
-            <button type="button" onclick="copyInstallLink()" style="background: #4a4a4a;">Copy Link</button>
+            
+            <button type="button" id="installBtn">INSTALL</button>
+            <button type="button" class="secondary" id="copyBtn">COPY LINK</button>
         </form>
     </div>
+
     <script>
-        function getHttpsLink() {
-            const choices = {};
-            if (document.getElementById('kdrama_trending_series').checked) choices.kdrama_trending_series = "on";
-            if (document.getElementById('kdrama_trending_movie').checked) choices.kdrama_trending_movie = "on";
-            if (document.getElementById('kdrama_top_series').checked) choices.kdrama_top_series = "on";
-            if (document.getElementById('kdrama_top_movie').checked) choices.kdrama_top_movie = "on";
-            
-            const choicesStr = JSON.stringify(choices);
-            let host = window.location.host;
-            let protocol = window.location.protocol;
-            return protocol + '//' + host + '/' + encodeURIComponent(choicesStr) + '/manifest.json';
+        const configForm = document.getElementById('configForm');
+        const ratingsCheckbox = document.getElementById('ratings');
+        const rpdbData = document.getElementById('rpdb-data');
+        const installBtn = document.getElementById('installBtn');
+        const copyBtn = document.getElementById('copyBtn');
+
+        ratingsCheckbox.addEventListener('change', (event) => {
+            if (event.currentTarget.checked) {
+                rpdbData.innerHTML = `
+                <div class="form-element column">
+                    <label for="rpdbkey">RPDB API Key (get it from <a href="https://ratingposterdb.com/" target="_blank" style="color: #8A5AAB;">RatingPosterDB</a>)</label>
+                    <input type="text" id="rpdbkey" name="rpdbkey" required placeholder="Enter your API Key"/>
+                </div>`;
+                const rpdbInput = document.getElementById('rpdbkey');
+                rpdbInput.addEventListener('blur', () => {
+                    const apiKey = rpdbInput.value;
+                    if (!apiKey) return;
+                    fetch('https://api.ratingposterdb.com/' + apiKey + '/isValid')
+                        .then(async (resp) => {
+                            let data = await resp.json().catch(() => ({}));
+                            if (!data.valid) {
+                                alert('RPDB Key is invalid, please try again');
+                                rpdbInput.value = '';
+                            }
+                        })
+                        .catch(() => alert('Could not validate RPDB key'));
+                });
+            } else {
+                rpdbData.innerHTML = '';
+            }
+        });
+
+        function getConfigObj() {
+            const formData = new FormData(configForm);
+            const config = {};
+            for (let [key, value] of formData.entries()) {
+                if (key !== 'ratings') {
+                    config[key] = value;
+                }
+            }
+            return config;
         }
 
-        function generateInstallLink() {
-            let installLink = getHttpsLink().replace(/^https?:\/\//, 'stremio://');
-            window.location.href = installLink;
+        function getInstallLink(isStremioProtocol) {
+            const config = getConfigObj();
+            const configStr = encodeURIComponent(JSON.stringify(config));
+            const host = window.location.host;
+            const protocol = isStremioProtocol ? 'stremio:' : window.location.protocol;
+            return protocol + '//' + host + '/' + configStr + '/manifest.json';
         }
 
-        function copyInstallLink() {
-            const httpsLink = getHttpsLink();
-            navigator.clipboard.writeText(httpsLink).then(() => {
-                alert('Link copied to clipboard!');
-            }).catch(err => {
-                alert('Could not copy link. Here is the raw link: ' + httpsLink);
-            });
-        }
+        installBtn.onclick = () => {
+            if (configForm.reportValidity()) {
+                window.location.href = getInstallLink(true);
+            }
+        };
+
+        copyBtn.onclick = () => {
+            if (configForm.reportValidity()) {
+                const link = getInstallLink(false);
+                navigator.clipboard.writeText(link).then(() => {
+                    alert('Link copied to clipboard!');
+                }).catch(() => {
+                    alert('Failed to copy. URL: ' + link);
+                });
+            }
+        };
     </script>
 </body>
 </html>
