@@ -113,8 +113,13 @@ app.get([
         let rpdbkey = choices.rpdbkey || 't0-free-rpdb';
         if (rpdbkey && rpdbkey.trim() !== '') {
             metas = metas.map(meta => {
-                if (meta.id && meta.id.startsWith('tt')) {
-                    return { ...meta, poster: `https://api.ratingposterdb.com/${rpdbkey}/imdb/poster-default/${meta.id}.jpg?fallback=true` };
+                if (meta.id) {
+                    if (meta.id.startsWith('tt')) {
+                        return { ...meta, poster: `https://api.ratingposterdb.com/${rpdbkey}/imdb/poster-default/${meta.id}.jpg?fallback=true` };
+                    } else if (meta.id.startsWith('tmdb:')) {
+                        const tmdbId = meta.id.replace('tmdb:', '');
+                        return { ...meta, poster: `https://api.ratingposterdb.com/${rpdbkey}/tmdb/poster-default/${tmdbId}.jpg?fallback=true` };
+                    }
                 }
                 return meta;
             });
