@@ -18,11 +18,11 @@ app.get('/configure', (req, res) => {
 });
 
 const catalogsDef = [
-    { type: 'k drama', id: 'kdrama_trending_series', name: 'Trending K-Dramas', extra: [{ name: 'genre', isRequired: false, options: ['Action', 'Adventure', 'Comedy', 'Crime', 'Drama', 'Fantasy', 'Historical', 'Horror', 'Mystery', 'Romance', 'Sci-fi', 'Thriller'] }] },
-    { type: 'k drama', id: 'kdrama_top_series', name: 'Top K-Dramas', extra: [{ name: 'genre', isRequired: false, options: ['Action', 'Adventure', 'Comedy', 'Crime', 'Drama', 'Fantasy', 'Historical', 'Horror', 'Mystery', 'Romance', 'Sci-fi', 'Thriller'] }] },
-    { type: 'k drama', id: 'kdrama_trending_movie', name: 'Trending K-Movies', extra: [{ name: 'genre', isRequired: false, options: ['Action', 'Adventure', 'Comedy', 'Crime', 'Drama', 'Fantasy', 'Historical', 'Horror', 'Mystery', 'Romance', 'Sci-fi', 'Thriller'] }] },
-    { type: 'k drama', id: 'kdrama_top_movie', name: 'Top K-Movies', extra: [{ name: 'genre', isRequired: false, options: ['Action', 'Adventure', 'Comedy', 'Crime', 'Drama', 'Fantasy', 'Historical', 'Horror', 'Mystery', 'Romance', 'Sci-fi', 'Thriller'] }] },
-    { type: 'k drama', id: 'kdrama_airing_series', name: 'Top Airing K-Dramas', extra: [{ name: 'genre', isRequired: false, options: ['Action', 'Adventure', 'Comedy', 'Crime', 'Drama', 'Fantasy', 'Historical', 'Horror', 'Mystery', 'Romance', 'Sci-fi', 'Thriller'] }] }
+    { type: 'k drama', id: 'kdrama_trending_series', name: 'Trending K-Dramas', extra: [{ name: 'genre', isRequired: false, options: ['Action', 'Adventure', 'Comedy', 'Crime', 'Drama', 'Fantasy', 'Historical', 'Horror', 'Mystery', 'Romance', 'Sci-fi', 'Thriller'] }, { name: 'skip' }] },
+    { type: 'k drama', id: 'kdrama_top_series', name: 'Top K-Dramas', extra: [{ name: 'genre', isRequired: false, options: ['Action', 'Adventure', 'Comedy', 'Crime', 'Drama', 'Fantasy', 'Historical', 'Horror', 'Mystery', 'Romance', 'Sci-fi', 'Thriller'] }, { name: 'skip' }] },
+    { type: 'k drama', id: 'kdrama_trending_movie', name: 'Trending K-Movies', extra: [{ name: 'genre', isRequired: false, options: ['Action', 'Adventure', 'Comedy', 'Crime', 'Drama', 'Fantasy', 'Historical', 'Horror', 'Mystery', 'Romance', 'Sci-fi', 'Thriller'] }, { name: 'skip' }] },
+    { type: 'k drama', id: 'kdrama_top_movie', name: 'Top K-Movies', extra: [{ name: 'genre', isRequired: false, options: ['Action', 'Adventure', 'Comedy', 'Crime', 'Drama', 'Fantasy', 'Historical', 'Horror', 'Mystery', 'Romance', 'Sci-fi', 'Thriller'] }, { name: 'skip' }] },
+    { type: 'k drama', id: 'kdrama_airing_series', name: 'Top Airing K-Dramas', extra: [{ name: 'genre', isRequired: false, options: ['Action', 'Adventure', 'Comedy', 'Crime', 'Drama', 'Fantasy', 'Historical', 'Horror', 'Mystery', 'Romance', 'Sci-fi', 'Thriller'] }, { name: 'skip' }] }
 ];
 
 const baseManifest = {
@@ -30,7 +30,7 @@ const baseManifest = {
     version: '1.0.1',
     name: 'K-Drama Catalogs',
     description: 'Trending and Top Rated K-Dramas & K-Movies',
-    types: ['k drama'],
+    types: ['k drama', 'series', 'movie'],
     resources: ['catalog', 'meta'],
     catalogs: [],
     behaviorHints: {
