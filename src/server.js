@@ -31,11 +31,13 @@ const catalogsDef = [
 
 const baseManifest = {
     id: 'org.kdramacatalog',
-    version: '1.0.1',
+    version: '1.0.2',
     name: 'K-Drama Catalogs',
     description: 'Trending and Top Rated K-Dramas & K-Movies',
     types: ['k drama', 'series', 'movie'],
-    resources: ['catalog', 'meta'],
+    resources: [
+        { name: 'catalog', types: ['k drama', 'series', 'movie'] }
+    ],
     idPrefixes: ['tt'],
     catalogs: [],
     behaviorHints: {
@@ -71,6 +73,14 @@ app.get('/:catalogChoices/manifest.json', (req, res) => {
         const oldId = cat.id.replace('_series', '').replace('_movie', '');
         return choices[cat.id] === "on" || choices[oldId] === "on";
     });
+
+    if (choices.rpdbkey && typeof choices.rpdbkey === 'string' && choices.rpdbkey.trim() !== '') {
+        dynamicManifest.resources.push({
+            name: 'meta',
+            types: ['series', 'movie'],
+            idPrefixes: ['tt']
+        });
+    }
     
     res.json(dynamicManifest);
 });
@@ -125,6 +135,7 @@ app.get([
     '/:catalogChoices/meta/:type/:id.json'
 ], async (req, res) => {
     let { type, id, catalogChoices } = req.params;
+    let originalType = type;
     
     // Cinemeta doesn't understand "k drama" type. 
     // We map "k drama" to "series" for cinemeta requests by default.
@@ -143,6 +154,7 @@ app.get([
             const metaRes = await axios.get(`https://v3-cinemeta.strem.io/meta/${type}/${id}.json`);
             if (metaRes.data && metaRes.data.meta) {
                 metaRes.data.meta.poster = `https://api.ratingposterdb.com/${choices.rpdbkey}/imdb/poster-default/${id}.jpg?fallback=true`;
+                metaRes.data.meta.type = originalType;
             }
             res.setHeader('Cache-Control', 'public, max-age=14400, stale-while-revalidate=86400, stale-if-error=86400');
             return res.json(metaRes.data);
