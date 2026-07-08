@@ -33,6 +33,14 @@ Implement Quality of Life (QoL) improvements from the `scratch-anime` addon into
   - Value: `public, max-age=14400, stale-while-revalidate=86400, stale-if-error=86400`
   - This ensures Stremio clients and edge caches cache the catalog for 4 hours and gracefully handle updates in the background.
 
+### 4. Meta Resource Proxy (Fix for Missing Metadata)
+- **The Issue**: Because the KDrama addon uses a custom catalog type (`k drama`), Stremio sometimes fails to properly route the metadata requests (`description`, `cast`, `rating`, etc.) to the default Cinemeta addon when an item is selected.
+- **The Fix (`src/server.js`)**:
+  - Add `meta` to the `resources` array in the addon's `manifest.json`.
+  - Create a new endpoint for `/meta/:type/:id.json` (and `/:catalogChoices/meta/:type/:id.json`).
+  - When this endpoint is hit, the KDrama addon will intercept the request and perform a `307 Redirect` to Stremio's default Cinemeta addon: `https://v3-cinemeta.strem.io/meta/${req.params.type}/${req.params.id}.json`.
+  - If the type requested is `k drama`, we can infer if it's a movie or series based on the ID or route it appropriately so Cinemeta can return the rich metadata.
+
 ## Data Flow
 1. User visits `/configure`.
 2. User selects catalogs and optionally inputs an RPDB key. Form validation ensures key validity.
