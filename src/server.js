@@ -30,7 +30,7 @@ const baseManifest = {
     name: 'K-Drama Catalogs',
     description: 'Trending and Top Rated K-Dramas & K-Movies',
     types: ['k drama'],
-    resources: ['catalog'],
+    resources: ['catalog', 'meta'],
     catalogs: [],
     behaviorHints: {
         configurable: true,
@@ -85,7 +85,7 @@ app.get([
         let metas = await fetchCatalog(id, extraObj);
 
         // Inject RPDB poster if key is present and the item has an IMDb ID (starts with 'tt')
-        if (choices.rpdbkey) {
+        if (typeof choices.rpdbkey === 'string' && choices.rpdbkey.trim() !== '') {
             metas = metas.map(meta => {
                 if (meta.id && meta.id.startsWith('tt')) {
                     return { ...meta, poster: `https://api.ratingposterdb.com/${choices.rpdbkey}/imdb/poster-default/${meta.id}.jpg?fallback=true` };
@@ -101,6 +101,21 @@ app.get([
         console.error(`Catalog fetch error for ${type}/${id}:`, error);
         res.status(500).json({ err: 'Internal Server Error', metas: [] });
     }
+});
+
+app.get([
+    '/meta/:type/:id.json',
+    '/:catalogChoices/meta/:type/:id.json'
+], (req, res) => {
+    let { type, id } = req.params;
+    
+    // Cinemeta doesn't understand "k drama" type. 
+    // We map "k drama" to "series" for cinemeta requests by default.
+    if (type === 'k drama') {
+        type = 'series';
+    }
+    
+    res.redirect(307, `https://v3-cinemeta.strem.io/meta/${type}/${id}.json`);
 });
 
 module.exports = app;
