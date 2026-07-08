@@ -59,7 +59,9 @@ async function fetchCatalog(catalogId, extra, skip = 0) {
         
         if (catalogId.includes('movie')) { typeId = 77; metaType = 'movie'; }
         if (catalogId.includes('top')) sort = 'top';
-        if (catalogId.includes('airing')) { sort = 'top'; status = 3; }
+        if (catalogId.includes('airing')) { sort = 'popular'; status = 1; }
+        if (catalogId.includes('new')) { sort = 'newest'; status = null; }
+        if (catalogId.includes('upcoming')) { sort = 'popular'; status = 2; }
         
         const items = await fetchFromMDL(typeId, sort, genre, status);
         
