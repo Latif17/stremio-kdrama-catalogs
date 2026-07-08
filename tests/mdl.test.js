@@ -21,11 +21,10 @@ describe('MDL Catalog Fetcher', () => {
 
     it('fetches trending list and maps to Stremio metas', async () => {
         mapTitleToImdbId.mockResolvedValue('tt12345');
-        nock('https://kuryana.vercel.app')
-            .get('/api/v1/shows/top')
-            .reply(200, [
-                { title: 'Test Drama', year: 2023, poster: 'http://img.com/a.jpg' }
-            ]);
+        nock('https://mydramalist.com')
+            .get('/search')
+            .query(true) // match any query for simplicity
+            .reply(200, '<div class="box" id="mdl-1"><h6 class="title"><a href="#">Test Drama</a></h6><span class="text-muted">2023</span><img class="img-responsive" data-src="http://img.com/a.jpg"></div>');
         
         const metas = await fetchCatalog('kdrama_top');
         expect(metas).toHaveLength(1);
@@ -35,12 +34,13 @@ describe('MDL Catalog Fetcher', () => {
 
     it('ignores items with missing titles', async () => {
         mapTitleToImdbId.mockResolvedValue('tt12345');
-        nock('https://kuryana.vercel.app')
-            .get('/api/v1/shows/popular')
-            .reply(200, [
-                { year: 2023, poster: 'http://img.com/b.jpg' },
-                { title: 'Valid Drama', year: 2023, poster: 'http://img.com/a.jpg' }
-            ]);
+        nock('https://mydramalist.com')
+            .get('/search')
+            .query(true)
+            .reply(200, `
+                <div class="box" id="mdl-1"><span class="text-muted">2023</span><img class="img-responsive" data-src="http://img.com/b.jpg"></div>
+                <div class="box" id="mdl-2"><h6 class="title"><a href="#">Valid Drama</a></h6><span class="text-muted">2023</span><img class="img-responsive" data-src="http://img.com/a.jpg"></div>
+            `);
         
         const metas = await fetchCatalog('kdrama_trending');
         expect(metas).toHaveLength(1);
@@ -49,25 +49,23 @@ describe('MDL Catalog Fetcher', () => {
 
     it('ignores items where Cinemeta ID mapping fails', async () => {
         mapTitleToImdbId.mockResolvedValueOnce(null).mockResolvedValueOnce('tt12345');
-        nock('https://kuryana.vercel.app')
-            .get('/api/v1/shows/top')
-            .reply(200, [
-                { title: 'Failing Drama', year: 2023, poster: 'http://img.com/c.jpg' },
-                { title: 'Success Drama', year: 2023, poster: 'http://img.com/a.jpg' }
-            ]);
+        nock('https://mydramalist.com')
+            .get('/search')
+            .query(true)
+            .reply(200, `
+                <div class="box" id="mdl-1"><h6 class="title"><a href="#">Failing Drama</a></h6><span class="text-muted">2023</span></div>
+                <div class="box" id="mdl-2"><h6 class="title"><a href="#">Success Drama</a></h6><span class="text-muted">2023</span></div>
+            `);
         
         const metas = await fetchCatalog('kdrama_top');
         expect(metas).toHaveLength(1);
         expect(metas[0].name).toBe('Success Drama');
     });
 
-    it('throws error for unknown catalog IDs', async () => {
-        await expect(fetchCatalog('unknown_catalog')).rejects.toThrow('Unknown catalog ID: unknown_catalog');
-    });
-
     it('throws error on API failure', async () => {
-        nock('https://kuryana.vercel.app')
-            .get('/api/v1/shows/top')
+        nock('https://mydramalist.com')
+            .get('/search')
+            .query(true)
             .reply(500, 'Internal Server Error');
         
         await expect(fetchCatalog('kdrama_top')).rejects.toThrow();

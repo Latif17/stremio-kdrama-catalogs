@@ -68,13 +68,34 @@ app.get([
     '/:catalogChoices/catalog/:type/:id.json',
     '/:catalogChoices/catalog/:type/:id/:extra.json'
 ], async (req, res) => {
-    const { type, id, extra } = req.params;
+    const { type, id, extra, catalogChoices } = req.params;
+    
+    let choices = {};
+    try {
+        choices = JSON.parse(catalogChoices);
+    } catch(e) {
+        choices = {};
+    }
+
     let extraObj = {};
     if (extra && extra.startsWith('genre=')) {
         extraObj.genre = decodeURIComponent(extra.split('=')[1]).replace('.json', '');
     }
     try {
-        const metas = await fetchCatalog(id, extraObj);
+        let metas = await fetchCatalog(id, extraObj);
+
+        // Inject RPDB poster if key is present and the item has an IMDb ID (starts with 'tt')
+        if (choices.rpdbkey) {
+            metas = metas.map(meta => {
+                if (meta.id && meta.id.startsWith('tt')) {
+                    meta.poster = `https://api.ratingposterdb.com/${choices.rpdbkey}/imdb/poster-default/${meta.id}.jpg?fallback=true`;
+                }
+                return meta;
+            });
+        }
+
+        // Set HTTP Caching Headers
+        res.setHeader('Cache-Control', 'public, max-age=14400, stale-while-revalidate=86400, stale-if-error=86400');
         res.json({ metas });
     } catch (error) {
         console.error(`Catalog fetch error for ${type}/${id}:`, error);
