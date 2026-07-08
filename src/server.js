@@ -47,6 +47,7 @@ app.get('/:catalogChoices/manifest.json', (req, res) => {
     } catch(e) {
         choices = {};
     }
+    if (!choices || typeof choices !== 'object') choices = {};
 
     const dynamicManifest = JSON.parse(JSON.stringify(baseManifest));
     delete dynamicManifest.behaviorHints;

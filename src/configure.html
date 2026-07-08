@@ -27,18 +27,33 @@
                 <label for="kdrama_top">Top K-Dramas</label>
             </div>
             <button type="button" onclick="generateInstallLink()">Install Addon</button>
+            <button type="button" onclick="copyInstallLink()" style="background: #4a4a4a;">Copy Link</button>
         </form>
     </div>
     <script>
-        function generateInstallLink() {
+        function getHttpsLink() {
             const choices = {};
             if (document.getElementById('kdrama_trending').checked) choices.kdrama_trending = "on";
             if (document.getElementById('kdrama_top').checked) choices.kdrama_top = "on";
             
             const choicesStr = JSON.stringify(choices);
             let host = window.location.host;
-            let installLink = 'stremio://' + host + '/' + encodeURIComponent(choicesStr) + '/manifest.json';
+            let protocol = window.location.protocol;
+            return protocol + '//' + host + '/' + encodeURIComponent(choicesStr) + '/manifest.json';
+        }
+
+        function generateInstallLink() {
+            let installLink = getHttpsLink().replace(/^https?:\/\//, 'stremio://');
             window.location.href = installLink;
+        }
+
+        function copyInstallLink() {
+            const httpsLink = getHttpsLink();
+            navigator.clipboard.writeText(httpsLink).then(() => {
+                alert('Link copied to clipboard!');
+            }).catch(err => {
+                alert('Could not copy link. Here is the raw link: ' + httpsLink);
+            });
         }
     </script>
 </body>
