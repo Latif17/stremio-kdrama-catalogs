@@ -16,8 +16,6 @@
         .logo img { height: 100%; object-fit: contain; }
         .form-element { margin-bottom: 2vh; display: flex; align-items: center; }
         .form-element label { margin-left: 1vh; cursor: pointer; }
-        .form-element.column { flex-direction: column; align-items: flex-start; }
-        .form-element.column input[type="text"] { width: 100%; padding: 1vh; margin-top: 1vh; background: #333; border: 1px solid #555; color: white; border-radius: 4px; }
         .separator { margin-bottom: 3vh; }
         button { border: 0; color: white; background: #8A5AAB; padding: 1.5vh; width: 100%; text-align: center; font-size: 2.2vh; font-weight: 600; cursor: pointer; border-radius: 4px; transition: background 0.2s; margin-top: 1vh; }
         button:hover { background: #714a7e; }
@@ -38,9 +36,8 @@
             <h3>Addon Settings</h3>
             <div class="form-element">
                 <input type="checkbox" id="ratings" name="ratings">
-                <label for="ratings">Ratings on Posters (requires RPDB key)</label>
+                <label for="ratings">Ratings on Posters</label>
             </div>
-            <div id="rpdb-data"></div>
             
             <div class="separator"></div>
             
@@ -70,61 +67,8 @@
     <script>
         const configForm = document.getElementById('configForm');
         const ratingsCheckbox = document.getElementById('ratings');
-        const rpdbData = document.getElementById('rpdb-data');
         const installBtn = document.getElementById('installBtn');
         const copyBtn = document.getElementById('copyBtn');
-
-        let validatedApiKey = null;
-        let isKeyValid = false;
-        let validationPromise = null;
-        let pendingValidationKey = null;
-
-        async function validateKey(apiKey) {
-            if (apiKey === validatedApiKey) return isKeyValid;
-            if (apiKey === pendingValidationKey && validationPromise) {
-                return await validationPromise;
-            }
-            
-            pendingValidationKey = apiKey;
-            validationPromise = fetch('https://api.ratingposterdb.com/' + apiKey + '/isValid')
-                .then(resp => resp.json())
-                .then(data => {
-                    validatedApiKey = apiKey;
-                    isKeyValid = !!data.valid;
-                    pendingValidationKey = null;
-                    validationPromise = null;
-                    return isKeyValid;
-                })
-                .catch(() => {
-                    pendingValidationKey = null;
-                    validationPromise = null;
-                    return false;
-                });
-                
-            return await validationPromise;
-        }
-
-        ratingsCheckbox.addEventListener('change', (event) => {
-            if (event.currentTarget.checked) {
-                rpdbData.innerHTML = `
-                <div class="form-element column">
-                    <label for="rpdbkey">RPDB API Key (get it from <a href="https://ratingposterdb.com/" target="_blank" style="color: #8A5AAB;">RatingPosterDB</a>)</label>
-                    <input type="text" id="rpdbkey" name="rpdbkey" required placeholder="Enter your API Key"/>
-                </div>`;
-                const rpdbInput = document.getElementById('rpdbkey');
-                rpdbInput.addEventListener('blur', async () => {
-                    const apiKey = rpdbInput.value;
-                    if (!apiKey) return;
-                    const isValid = await validateKey(apiKey);
-                    if (!isValid && rpdbInput.value === apiKey) {
-                        rpdbInput.value = '';
-                        setTimeout(() => alert('RPDB Key is invalid, please try again'), 10);
-                    }
-                });
-            } else {
-                rpdbData.innerHTML = '';
-            }
-        });
 
         function getConfigObj() {
             const formData = new FormData(configForm);
@@ -133,6 +77,9 @@
                 if (key !== 'ratings') {
                     config[key] = value;
                 }
+            }
+            if (ratingsCheckbox.checked) {
+                config.rpdbkey = 't0-free-rpdb';
             }
             return config;
         }
@@ -145,55 +92,21 @@
             return protocol + '//' + host + '/' + configStr + '/manifest.json';
         }
 
-        installBtn.onclick = async () => {
-            if (!configForm.reportValidity()) return;
-            if (ratingsCheckbox.checked) {
-                const rpdbInput = document.getElementById('rpdbkey');
-                const apiKey = rpdbInput ? rpdbInput.value : null;
-                if (apiKey) {
-                    installBtn.disabled = true;
-                    installBtn.textContent = 'VALIDATING...';
-                    const isValid = await validateKey(apiKey);
-                    installBtn.disabled = false;
-                    installBtn.textContent = 'INSTALL';
-                    if (!isValid) {
-                        if (rpdbInput.value === apiKey) {
-                            rpdbInput.value = '';
-                            setTimeout(() => alert('RPDB Key is invalid, please try again'), 10);
-                        }
-                        return;
-                    }
-                }
+        installBtn.onclick = () => {
+            if (configForm.reportValidity()) {
+                window.location.href = getInstallLink(true);
             }
-            window.location.href = getInstallLink(true);
         };
 
-        copyBtn.onclick = async () => {
-            if (!configForm.reportValidity()) return;
-            if (ratingsCheckbox.checked) {
-                const rpdbInput = document.getElementById('rpdbkey');
-                const apiKey = rpdbInput ? rpdbInput.value : null;
-                if (apiKey) {
-                    copyBtn.disabled = true;
-                    copyBtn.textContent = 'VALIDATING...';
-                    const isValid = await validateKey(apiKey);
-                    copyBtn.disabled = false;
-                    copyBtn.textContent = 'COPY LINK';
-                    if (!isValid) {
-                        if (rpdbInput.value === apiKey) {
-                            rpdbInput.value = '';
-                            setTimeout(() => alert('RPDB Key is invalid, please try again'), 10);
-                        }
-                        return;
-                    }
-                }
+        copyBtn.onclick = () => {
+            if (configForm.reportValidity()) {
+                const link = getInstallLink(false);
+                navigator.clipboard.writeText(link).then(() => {
+                    alert('Link copied to clipboard!');
+                }).catch(() => {
+                    alert('Failed to copy. URL: ' + link);
+                });
             }
-            const link = getInstallLink(false);
-            navigator.clipboard.writeText(link).then(() => {
-                alert('Link copied to clipboard!');
-            }).catch(() => {
-                alert('Failed to copy. URL: ' + link);
-            });
         };
     </script>
 </body>
