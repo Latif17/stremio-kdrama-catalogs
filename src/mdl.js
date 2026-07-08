@@ -70,9 +70,23 @@ async function fetchCatalog(catalogId, extra, skip = 0) {
         for (let i = 0; i < items.length; i += concurrencyLimit) {
             const chunk = items.slice(i, i + concurrencyLimit);
             const chunkPromises = chunk.map(async (item) => {
-                const imdbId = await mapTitleToImdbId(item.title, metaType, item.year);
-                if (imdbId) {
-                    return { id: imdbId, type: metaType, name: item.title, poster: item.poster };
+                const cinemeta = await mapTitleToImdbId(item.title, metaType, item.year);
+                if (cinemeta) {
+                    const imdbId = cinemeta.imdb_id || cinemeta.id;
+                    if (!imdbId) return null;
+                    return { 
+                        id: imdbId, 
+                        type: metaType, 
+                        name: item.title, 
+                        poster: item.poster,
+                        description: cinemeta.description,
+                        releaseInfo: cinemeta.releaseInfo,
+                        imdbRating: cinemeta.imdbRating,
+                        genres: cinemeta.genres,
+                        background: cinemeta.background,
+                        runtime: cinemeta.runtime,
+                        logo: cinemeta.logo
+                    };
                 }
                 return null;
             });

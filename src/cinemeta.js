@@ -8,19 +8,36 @@ async function searchCinemeta(query, type) {
 }
 
 async function mapTitleToImdbId(title, type, releaseYear) {
-    const cacheKey = `cinemeta:${type}:${title}:${releaseYear || 'any'}`;
+    const cacheKey = `cinemeta_v2:${type}:${title}:${releaseYear || 'any'}`;
     try {
         return await getCachedOrFetch(cacheKey, 1000 * 60 * 60 * 24 * 7, async () => { // cache mapping for 7 days
             const metas = await searchCinemeta(title, type);
             if (!metas.length) return null;
-            if (!releaseYear) return metas[0]?.imdb_id || null;
             
-            const match = metas.find(m => {
-                const year = m.year || (m.releaseInfo && m.releaseInfo.substring(0,4));
-                return String(year) === String(releaseYear);
-            });
+            let match;
+            if (!releaseYear) {
+                match = metas[0];
+            } else {
+                match = metas.find(m => {
+                    const year = m.year || (m.releaseInfo && m.releaseInfo.substring(0,4));
+                    return String(year) === String(releaseYear);
+                });
+                if (!match) match = metas[0];
+            }
             
-            return match ? match.imdb_id : null;
+            if (!match) return null;
+            
+            try {
+                const metaUrl = `https://v3-cinemeta.strem.io/meta/${type}/${match.imdb_id || match.id}.json`;
+                const metaRes = await axios.get(metaUrl, { timeout: 5000 });
+                if (metaRes.data && metaRes.data.meta) {
+                    return metaRes.data.meta;
+                }
+            } catch (e) {
+                // Ignore and return match fallback
+            }
+            
+            return match;
         });
     } catch (e) {
         return null;
