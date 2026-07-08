@@ -19,12 +19,20 @@
         <h1>Configure Addon</h1>
         <form id="configForm">
             <div class="option">
-                <input type="checkbox" id="kdrama_trending" name="kdrama_trending" checked>
-                <label for="kdrama_trending">Trending K-Dramas</label>
+                <input type="checkbox" id="kdrama_trending_series" name="kdrama_trending_series" checked>
+                <label for="kdrama_trending_series">Trending K-Dramas (Series)</label>
             </div>
             <div class="option">
-                <input type="checkbox" id="kdrama_top" name="kdrama_top" checked>
-                <label for="kdrama_top">Top K-Dramas</label>
+                <input type="checkbox" id="kdrama_trending_movie" name="kdrama_trending_movie" checked>
+                <label for="kdrama_trending_movie">Trending K-Movies (Movies)</label>
+            </div>
+            <div class="option">
+                <input type="checkbox" id="kdrama_top_series" name="kdrama_top_series" checked>
+                <label for="kdrama_top_series">Top K-Dramas (Series)</label>
+            </div>
+            <div class="option">
+                <input type="checkbox" id="kdrama_top_movie" name="kdrama_top_movie" checked>
+                <label for="kdrama_top_movie">Top K-Movies (Movies)</label>
             </div>
             <button type="button" onclick="generateInstallLink()">Install Addon</button>
             <button type="button" onclick="copyInstallLink()" style="background: #4a4a4a;">Copy Link</button>
@@ -33,8 +41,10 @@
     <script>
         function getHttpsLink() {
             const choices = {};
-            if (document.getElementById('kdrama_trending').checked) choices.kdrama_trending = "on";
-            if (document.getElementById('kdrama_top').checked) choices.kdrama_top = "on";
+            if (document.getElementById('kdrama_trending_series').checked) choices.kdrama_trending_series = "on";
+            if (document.getElementById('kdrama_trending_movie').checked) choices.kdrama_trending_movie = "on";
+            if (document.getElementById('kdrama_top_series').checked) choices.kdrama_top_series = "on";
+            if (document.getElementById('kdrama_top_movie').checked) choices.kdrama_top_movie = "on";
             
             const choicesStr = JSON.stringify(choices);
             let host = window.location.host;

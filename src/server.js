@@ -18,16 +18,18 @@ app.get('/configure', (req, res) => {
 });
 
 const catalogsDef = [
-    { type: 'K Drama', id: 'kdrama_trending', name: 'Trending K-Dramas' },
-    { type: 'K Drama', id: 'kdrama_top', name: 'Top K-Dramas' }
+    { type: 'series', id: 'kdrama_trending_series', name: 'Trending K-Dramas', extra: [{ name: 'genre', isRequired: false, options: ['Action', 'Adventure', 'Comedy', 'Crime', 'Drama', 'Fantasy', 'Historical', 'Horror', 'Mystery', 'Romance', 'Sci-fi', 'Thriller'] }] },
+    { type: 'movie', id: 'kdrama_trending_movie', name: 'Trending K-Movies', extra: [{ name: 'genre', isRequired: false, options: ['Action', 'Adventure', 'Comedy', 'Crime', 'Drama', 'Fantasy', 'Historical', 'Horror', 'Mystery', 'Romance', 'Sci-fi', 'Thriller'] }] },
+    { type: 'series', id: 'kdrama_top_series', name: 'Top K-Dramas', extra: [{ name: 'genre', isRequired: false, options: ['Action', 'Adventure', 'Comedy', 'Crime', 'Drama', 'Fantasy', 'Historical', 'Horror', 'Mystery', 'Romance', 'Sci-fi', 'Thriller'] }] },
+    { type: 'movie', id: 'kdrama_top_movie', name: 'Top K-Movies', extra: [{ name: 'genre', isRequired: false, options: ['Action', 'Adventure', 'Comedy', 'Crime', 'Drama', 'Fantasy', 'Historical', 'Horror', 'Mystery', 'Romance', 'Sci-fi', 'Thriller'] }] }
 ];
 
 const baseManifest = {
     id: 'org.kdramacatalog',
     version: '1.0.0',
     name: 'K-Drama Catalogs',
-    description: 'Trending and Top Rated K-Dramas from MyDramaList',
-    types: ['K Drama', 'series', 'movie'],
+    description: 'Trending and Top Rated K-Dramas & K-Movies',
+    types: ['series', 'movie'],
     resources: ['catalog'],
     catalogs: [],
     behaviorHints: {
@@ -52,7 +54,12 @@ app.get('/:catalogChoices/manifest.json', (req, res) => {
     const dynamicManifest = JSON.parse(JSON.stringify(baseManifest));
     delete dynamicManifest.behaviorHints;
     
-    dynamicManifest.catalogs = catalogsDef.filter(cat => choices[cat.id] === "on");
+    // Support legacy "kdrama_trending" or "kdrama_top" as well as split ones
+    dynamicManifest.catalogs = catalogsDef.filter(cat => {
+        // If they checked the specific one (kdrama_trending_series) or the old generic one (kdrama_trending)
+        const oldId = cat.id.replace('_series', '').replace('_movie', '');
+        return choices[cat.id] === "on" || choices[oldId] === "on";
+    });
     
     res.json(dynamicManifest);
 });
@@ -61,9 +68,13 @@ app.get([
     '/:catalogChoices/catalog/:type/:id.json',
     '/:catalogChoices/catalog/:type/:id/:extra.json'
 ], async (req, res) => {
-    const { type, id } = req.params;
+    const { type, id, extra } = req.params;
+    let extraObj = {};
+    if (extra && extra.startsWith('genre=')) {
+        extraObj.genre = decodeURIComponent(extra.split('=')[1]).replace('.json', '');
+    }
     try {
-        const metas = await fetchCatalog(id);
+        const metas = await fetchCatalog(id, extraObj);
         res.json({ metas });
     } catch (error) {
         console.error(`Catalog fetch error for ${type}/${id}:`, error);
