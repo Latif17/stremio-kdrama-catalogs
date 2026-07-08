@@ -88,7 +88,7 @@ app.get([
         if (choices.rpdbkey) {
             metas = metas.map(meta => {
                 if (meta.id && meta.id.startsWith('tt')) {
-                    meta.poster = `https://api.ratingposterdb.com/${choices.rpdbkey}/imdb/poster-default/${meta.id}.jpg?fallback=true`;
+                    return { ...meta, poster: `https://api.ratingposterdb.com/${choices.rpdbkey}/imdb/poster-default/${meta.id}.jpg?fallback=true` };
                 }
                 return meta;
             });
