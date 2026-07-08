@@ -27,7 +27,7 @@ const catalogsDef = [
 
 const baseManifest = {
     id: 'org.kdramacatalog',
-    version: '1.0.0',
+    version: '1.0.1',
     name: 'K-Drama Catalogs',
     description: 'Trending and Top Rated K-Dramas & K-Movies',
     types: ['k drama'],
