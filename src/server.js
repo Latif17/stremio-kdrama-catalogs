@@ -18,8 +18,8 @@ app.get('/configure', (req, res) => {
 });
 
 const catalogsDef = [
-    { type: 'series', id: 'kdrama_trending', name: 'Trending K-Dramas' },
-    { type: 'series', id: 'kdrama_top', name: 'Top K-Dramas' }
+    { type: 'K Drama', id: 'kdrama_trending', name: 'Trending K-Dramas' },
+    { type: 'K Drama', id: 'kdrama_top', name: 'Top K-Dramas' }
 ];
 
 const baseManifest = {
@@ -27,7 +27,7 @@ const baseManifest = {
     version: '1.0.0',
     name: 'K-Drama Catalogs',
     description: 'Trending and Top Rated K-Dramas from MyDramaList',
-    types: ['series', 'movie'],
+    types: ['K Drama', 'series', 'movie'],
     resources: ['catalog'],
     catalogs: [],
     behaviorHints: {
